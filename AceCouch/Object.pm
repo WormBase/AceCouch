@@ -18,6 +18,9 @@ BEGIN {
 
 # TODO: smarter caching
 
+
+# Autogenerating access methods (tags)
+
 our $AUTOLOAD;
 
 sub AUTOLOAD {
@@ -157,7 +160,9 @@ sub col { # implicitly fills an object
     }
 
     return map {
-        $_->[0] !~ /^_/ ? AceCouch::Object->new_unfilled($self->db, $_->[0]) : ();
+        $_->[0] !~ /^_/ ? 
+          $_->[1] ? AceCouch::Object->new_filled($self->db, $_->[0], $_->[1]) : AceCouch::Object->new_unfilled($self->db, $_->[0]) 
+          : ();
     } @objs;
 }
 
@@ -349,6 +354,23 @@ sub _attach_tree { # should add subtrees to the top-level cache too
 
     $hash = $hash->{"tag~$_"} //= {} foreach @$path;
     $hash->{"tag~$tag"} = $tree;
+}
+
+
+# for testing
+sub _dumpdata {
+  my $self = shift;
+  my $h = shift;
+  my $level = shift || 1;
+  foreach my $k (keys %{$h}) {
+    print (("\t" x $level) . "$k:\t");
+    if(ref($h->{$k}) == 'HASH'){
+      print ("\n");
+      $self->_dumpdata($h->{$k}, $level + 1);
+    } else {
+      print ($h->{$k} . "\n");
+    }
+  }
 }
 
 __PACKAGE__
