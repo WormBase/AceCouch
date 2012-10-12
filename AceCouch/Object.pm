@@ -47,10 +47,10 @@ sub AUTOLOAD {
 ## specific constructors... mild code duplication for now
 
 sub new_unfilled {
-    my ($class, $db, $id) = @_;
+    my ($class, $db, $id, $tree) = @_;
     my ($c, $n) = AceCouch->id2cn($id);
 
-    return bless { db => $db, id => $id, class => $c, name => $n }, $class;
+    return bless { db => $db, id => $id, class => $c, name => $n, tree => $tree }, $class;
 }
 
 sub new_filled {
@@ -161,7 +161,7 @@ sub col { # implicitly fills an object
 
     return map {
         $_->[0] !~ /^_/ ? 
-          $_->[1] ? AceCouch::Object->new_filled($self->db, $_->[0], $_->[1]) : AceCouch::Object->new_unfilled($self->db, $_->[0]) 
+          $_->[1] ? AceCouch::Object->new_filled($self->db, $_->[0], $_->[1]) : AceCouch::Object->new_unfilled($self->db, $_->[0], 1) 
           : ();
     } @objs;
 }
