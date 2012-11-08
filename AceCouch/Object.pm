@@ -247,7 +247,7 @@ sub row {
     my $fetch;
     while ($obj) {
         # basically a clone + fetch:
-        $fetch = AceCouch::Object->new_unfilled($obj->db, $obj->id);
+        $fetch = AceCouch::Object->new_filled($obj->db, $obj->id, $obj->data);
         push @row, $fetch;
         eval { $obj = $obj->right };
         if (my $e = $@) {
