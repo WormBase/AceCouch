@@ -41,7 +41,7 @@ sub AUTOLOAD {
     my $obj = $self->get($tag, $position)
            // return;
 
-    $obj->isObject ? $obj->fetch : $obj->right;
+    return $obj->isObject ? $obj->fetch : ($position > 1) ? $obj : $obj->right;
 }
 
 ## specific constructors... mild code duplication for now
