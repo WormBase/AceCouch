@@ -18,6 +18,9 @@ BEGIN {
 
 # TODO: smarter caching
 
+
+# Autogenerating access methods (tags)
+
 our $AUTOLOAD;
 
 sub AUTOLOAD {
@@ -38,16 +41,16 @@ sub AUTOLOAD {
     my $obj = $self->get($tag, $position)
            // return;
 
-    $obj->isObject ? $obj->fetch : $obj->right;
+    return $obj->isObject ? $obj->fetch : ($position > 1) ? $obj : $obj->right;
 }
 
 ## specific constructors... mild code duplication for now
 
 sub new_unfilled {
-    my ($class, $db, $id) = @_;
+    my ($class, $db, $id, $tree) = @_;
     my ($c, $n) = AceCouch->id2cn($id);
 
-    return bless { db => $db, id => $id, class => $c, name => $n }, $class;
+    return bless { db => $db, id => $id, class => $c, name => $n, tree => $tree }, $class;
 }
 
 sub new_filled {
@@ -70,7 +73,7 @@ sub new_tree {
     my ($c, $n) = AceCouch->id2cn($id); # even trees have names and classes...
     delete @{$data}{'class','name'}; # just in case; probably not needed
 
-    return bless {
+    my $obj = bless {
         db    => $db,
         id    => $id,
         class => $c,
@@ -78,6 +81,8 @@ sub new_tree {
         tree  => 1,
         _data  => $data,
     }, $class;
+
+    return $c eq 'LongText' ? $obj->fetch : $obj;
 }
 
 sub DESTROY {}
@@ -157,7 +162,9 @@ sub col { # implicitly fills an object
     }
 
     return map {
-        $_->[0] !~ /^_/ ? AceCouch::Object->new_unfilled($self->db, $_->[0]) : ();
+        $_->[0] !~ /^_/ ? 
+          $_->[1] ? AceCouch::Object->new_filled($self->db, $_->[0], $_->[1]) : AceCouch::Object->new_unfilled($self->db, $_->[0], 1) 
+          : ();
     } @objs;
 }
 
@@ -242,7 +249,7 @@ sub row {
     my $fetch;
     while ($obj) {
         # basically a clone + fetch:
-        $fetch = AceCouch::Object->new_unfilled($obj->db, $obj->id);
+        $fetch = AceCouch::Object->new_filled($obj->db, $obj->id, $obj->data);
         push @row, $fetch;
         eval { $obj = $obj->right };
         if (my $e = $@) {
@@ -349,6 +356,23 @@ sub _attach_tree { # should add subtrees to the top-level cache too
 
     $hash = $hash->{"tag~$_"} //= {} foreach @$path;
     $hash->{"tag~$tag"} = $tree;
+}
+
+
+# for testing
+sub _dumpdata {
+  my $self = shift;
+  my $h = shift;
+  my $level = shift || 1;
+  foreach my $k (keys %{$h}) {
+    print (("\t" x $level) . "$k:\t");
+    if(ref($h->{$k}) == 'HASH'){
+      print ("\n");
+      $self->_dumpdata($h->{$k}, $level + 1);
+    } else {
+      print ($h->{$k} . "\n");
+    }
+  }
 }
 
 __PACKAGE__

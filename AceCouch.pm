@@ -11,7 +11,8 @@ our $VERSION = 0.95;
 
 our $THROWS_ON_AMBIGUOUS;
 BEGIN {
-    $THROWS_ON_AMBIGUOUS //= 1;
+    $THROWS_ON_AMBIGUOUS 
+         //= 1;
     $THROWS_ON_AMBIGUOUS = !! $THROWS_ON_AMBIGUOUS;
 }
 
@@ -29,9 +30,12 @@ sub new {
     my %params = @_ == 1 ? %{$_[0]} : @_;
 
     my $self = {
-        name => $params{name} // AC::E::RequiredArgument->throw('Need name of DB'),
-        host => $params{host} // 'localhost',
-        port => $params{port} // 5984,
+        name => $params{name} 
+            // AC::E::RequiredArgument->throw('Need name of DB'),
+        host => $params{host} 
+            // 'localhost',
+        port => $params{port} 
+            // 5984,
     };
 
     $self->{_conn} = AnyEvent::CouchDB->new("http://$self->{host}:$self->{port}/");
@@ -68,7 +72,8 @@ sub fetch {
                  };
 
     foreach (qw(class name tag filled tree)) { # AcePerl interface... might remove later
-        $params{$_} //= $params{"-$_"};
+        $params{$_} 
+          //= $params{"-$_"};
     }
 
     my $class = $params{class}
@@ -77,13 +82,14 @@ sub fetch {
         // AC::E::RequiredArgument->throw('fetch requires "name" arg');
 
     # this will check for an underlying subdb
-    my $db = $self->{_classdb}->{$class} //= $self->_connect($class);
-    my $id = $params{id} // $self->cn2id($class, $name);
+    my $db = $self->{_classdb}->{$class} 
+              //= $self->_connect($class);
+    my $id = $params{id} 
+              // $self->cn2id($class, $name);
         # should be abstracted into AceCouch::Object?
 
     if ($params{tag}) {
         my $view = ($params{tree} ? 'tree' : 'tag') . '/' . $params{tag};
-
         $view = $db->view($view, { key => uri_escape($id) })->recv->{rows}->[0]->{value}
             or return;
 
@@ -108,7 +114,8 @@ sub fetch {
             return AceCouch::Object->new_unfilled($self, $id) unless $params{filled};
 
             $class = ($self->id2cn($id))[0];
-            $db = $self->{_classdb}->{$class} //= $self->_connect($class);
+            $db = $self->{_classdb}->{$class} 
+                        //= $self->_connect($class);
             return AceCouch::Object->new_filled(
                 $self, $id, $db->open_doc( uri_escape($id) )->recv
             );
