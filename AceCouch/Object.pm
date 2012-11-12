@@ -73,7 +73,7 @@ sub new_tree {
     my ($c, $n) = AceCouch->id2cn($id); # even trees have names and classes...
     delete @{$data}{'class','name'}; # just in case; probably not needed
 
-    return bless {
+    my $obj = bless {
         db    => $db,
         id    => $id,
         class => $c,
@@ -81,6 +81,8 @@ sub new_tree {
         tree  => 1,
         _data  => $data,
     }, $class;
+
+    return $c eq 'LongText' ? $obj->fetch : $obj;
 }
 
 sub DESTROY {}
